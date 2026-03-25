@@ -5,192 +5,344 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>竞品与经代情报看板 - 交互版</title>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
         :root {
             --bg: #0a0a0f;
-            --card: rgba(255,255,255,0.02);
-            --card-hover: rgba(255,255,255,0.04);
-            --border: rgba(255,255,255,0.06);
-            --border-hover: rgba(255,255,255,0.15);
-            --text: #fff;
-            --text2: rgba(255,255,255,0.5);
-            --text3: rgba(255,255,255,0.4);
+            --card: rgba(255,255,255,0.03);
+            --card-hover: rgba(255,255,255,0.06);
+            --border: rgba(255,255,255,0.07);
+            --border-hover: rgba(255,255,255,0.18);
+            --text: #f1f5f9;
+            --text2: rgba(255,255,255,0.55);
+            --text3: rgba(255,255,255,0.35);
             --modal-bg: #141418;
-            --green: #52c41a;
-            --yellow: #faad14;
-            --red: #ff4d4f;
+            --green: #10b981;
+            --yellow: #f59e0b;
+            --red: #ef4444;
             --blue: #3b82f6;
         }
         [data-theme="light"] {
             --bg: #f5f5f7;
-            --card: rgba(255,255,255,0.8);
-            --card-hover: rgba(255,255,255,0.95);
-            --border: rgba(0,0,0,0.08);
-            --border-hover: rgba(0,0,0,0.15);
+            --card: rgba(255,255,255,0.85);
+            --card-hover: rgba(255,255,255,1);
+            --border: rgba(0,0,0,0.1);
+            --border-hover: rgba(0,0,0,0.2);
             --text: #1d1d1f;
             --text2: rgba(0,0,0,0.6);
-            --text3: rgba(0,0,0,0.4);
+            --text3: rgba(0,0,0,0.35);
             --modal-bg: #ffffff;
+            --green: #10b981;
+            --yellow: #f59e0b;
+            --red: #ef4444;
+            --blue: #3b82f6;
         }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
+            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
             background: var(--bg);
             color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
-            padding: 24px;
             min-height: 100vh;
+            padding: 20px 16px 48px;
             transition: background 0.3s;
         }
+        .page-wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-bottom: 18px;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--border);
+        }
+        .header-left .badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #10b981, #3b82f6);
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            padding: 3px 12px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+        }
+        .header-left h1 { font-size: 22px; font-weight: 800; line-height: 1.3; }
+        .header-left .sub { font-size: 12px; color: var(--text2); margin-top: 4px; }
+        .header-right { text-align: right; }
+        .header-right .update-label { font-size: 11px; color: var(--text3); margin-bottom: 2px; }
+        .header-right .update-time { font-size: 13px; color: var(--green); font-weight: 600; }
         .theme-toggle {
-            position: fixed;
-            top: 24px; right: 24px;
-            width: 48px; height: 48px;
+            width: 40px; height: 40px;
             border-radius: 50%;
             border: 1px solid var(--border);
             background: var(--card);
             color: var(--text2);
-            font-size: 20px;
+            font-size: 18px;
             cursor: pointer;
             display: flex; align-items: center; justify-content: center;
-            z-index: 100;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+            transition: all 0.2s;
+            flex-shrink: 0;
         }
+        .theme-toggle:hover { border-color: var(--border-hover); background: var(--card-hover); }
         [data-theme="light"] .theme-toggle::before { content: "☀️"; }
         :root:not([data-theme="light"]) .theme-toggle::before { content: "🌙"; }
-        .header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 24px; padding-bottom: 16px;
-            border-bottom: 1px solid var(--border);
-        }
-        .header h1 { font-size: 20px; font-weight: 500; letter-spacing: 0.5px; }
-        .header .update-time { color: var(--text3); font-size: 12px; }
-        .grid {
-            display: grid;
-            grid-template-columns: 1fr 2fr 2fr;
-            grid-template-rows: auto auto;
-            gap: 16px; margin-bottom: 24px;
-        }
-        @media (max-width: 768px) {
-            .grid { grid-template-columns: 1fr; }
-            .big-number { font-size: 48px; }
-        }
-        .card {
+        /* ── Stats row ── */
+        .stats {
+            display: flex;
             background: var(--card);
             border: 1px solid var(--border);
-            border-radius: 8px; padding: 20px;
-            transition: all 0.2s;
+            border-radius: 14px;
+            overflow: hidden;
+            margin-bottom: 20px;
         }
-        .card:hover { border-color: var(--border-hover); background: var(--card-hover); }
-        .card-title { color: var(--text2); font-size: 12px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-        .big-number { font-size: 72px; font-weight: 300; color: var(--text); line-height: 1; margin-bottom: 8px; }
-        .big-number-label { color: var(--text3); font-size: 13px; }
+        .stat-item {
+            flex: 1;
+            padding: 14px 12px;
+            text-align: center;
+            border-right: 1px solid var(--border);
+        }
+        .stat-item:last-child { border-right: none; }
+        .stat-item .num { font-size: 28px; font-weight: 800; color: var(--green); line-height: 1; }
+        .stat-item .label { font-size: 11px; color: var(--text3); margin-top: 4px; }
+        /* ── Section grid ── */
+        .sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .section {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 18px;
+            transition: border-color 0.2s;
+        }
+        .section:hover { border-color: var(--border-hover); }
+        .section.full { grid-column: 1 / -1; }
+        .section-hd {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 14px; padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .section-ico {
+            width: 34px; height: 34px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 17px; flex-shrink: 0;
+        }
+        .s-green .section-ico { background: rgba(16,185,129,0.15); }
+        .s-blue .section-ico { background: rgba(59,130,246,0.15); }
+        .s-red .section-ico { background: rgba(239,68,68,0.15); }
+        .s-yellow .section-ico { background: rgba(245,158,11,0.15); }
+        .section-name { font-size: 14px; font-weight: 700; }
+        .section-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+        /* ── Bar chart ── */
         .bar-chart { display: flex; flex-direction: column; gap: 10px; }
         .bar-item {
             display: flex; align-items: center; gap: 8px;
-            cursor: pointer; padding: 4px; border-radius: 4px;
-            transition: background 0.2s;
+            cursor: pointer; padding: 5px; border-radius: 6px; transition: background 0.15s;
         }
-        .bar-item:hover { background: var(--border); }
-        .bar-label { width: 80px; font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .bar-track { flex: 1; height: 16px; background: var(--border); border-radius: 2px; overflow: hidden; }
-        .bar-fill { height: 100%; background: linear-gradient(90deg, #00d084, #00ff88); border-radius: 2px; transition: width 0.5s ease; }
-        .bar-value { width: 40px; text-align: right; font-size: 11px; color: var(--text2); }
+        .bar-item:hover { background: var(--card-hover); }
+        .bar-label { width: 80px; font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0; }
+        .bar-track { flex: 1; height: 18px; background: var(--border); border-radius: 3px; overflow: hidden; }
+        .bar-fill { height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 3px; transition: width 0.5s ease; }
+        .bar-value { width: 32px; text-align: right; font-size: 12px; color: var(--text2); flex-shrink: 0; }
+        /* ── List ── */
         .list { display: flex; flex-direction: column; gap: 8px; }
         .list-item {
-            display: flex; align-items: center; gap: 12px;
-            padding: 10px; background: var(--card); border-radius: 6px;
-            cursor: pointer; transition: all 0.2s;
-            border: 1px solid transparent;
+            display: flex; align-items: flex-start; gap: 12px;
+            padding: 11px 12px; background: rgba(255,255,255,0.02);
+            border-radius: 9px; border: 1px solid transparent;
+            cursor: pointer; transition: all 0.15s;
         }
-        .list-item:hover { background: var(--card-hover); border-color: var(--border); transform: translateX(4px); }
-        .list-icon { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-        .list-icon.red { background: var(--red); box-shadow: 0 0 8px rgba(255,77,79,0.4); }
-        .list-icon.yellow { background: var(--yellow); box-shadow: 0 0 8px rgba(250,173,20,0.4); }
-        .list-icon.green { background: var(--green); box-shadow: 0 0 8px rgba(82,196,26,0.4); }
-        .list-content { flex: 1; min-width: 0; }
-        .list-title { font-size: 13px; color: var(--text); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .list-desc { font-size: 11px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .list-item:hover {
+            background: var(--card-hover); border-color: var(--border);
+            transform: translateX(4px);
+        }
+        .list-dot {
+            width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 5px;
+        }
+        .list-dot.red { background: var(--red); box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+        .list-dot.yellow { background: var(--yellow); box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+        .list-dot.green { background: var(--green); box-shadow: 0 0 8px rgba(16,185,129,0.4); }
+        .list-body { flex: 1; min-width: 0; }
+        .list-title {
+            font-size: 13px; font-weight: 600; color: var(--text); line-height: 1.4;
+            margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .list-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .list-tag {
+            font-size: 10px; font-weight: 700; padding: 1px 7px;
+            border-radius: 6px; white-space: nowrap;
+        }
+        .tag-high { background: rgba(239,68,68,0.15); color: var(--red); }
+        .tag-medium { background: rgba(245,158,11,0.15); color: var(--yellow); }
+        .tag-normal { background: rgba(59,130,246,0.15); color: var(--blue); }
+        .list-date { font-size: 10px; color: var(--text3); margin-left: auto; white-space: nowrap; }
+        /* ── Modal ── */
         .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.8); backdrop-filter: blur(8px);
-            z-index: 1000; display: none; align-items: center; justify-content: center; padding: 24px;
+            background: rgba(0,0,0,0.75); backdrop-filter: blur(6px);
+            z-index: 1000; display: none; align-items: center; justify-content: center;
+            padding: 16px;
         }
         .modal-overlay.active { display: flex; }
         .modal-content {
             background: var(--modal-bg); border: 1px solid var(--border);
-            border-radius: 16px; max-width: 720px; width: 100%;
-            max-height: 85vh; overflow: hidden; display: flex; flex-direction: column;
-            animation: modalSlideIn 0.3s ease;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            border-radius: 16px; max-width: 680px; width: 100%;
+            max-height: 88vh; overflow: hidden;
+            display: flex; flex-direction: column;
+            animation: slideUp 0.25s ease;
+            box-shadow: 0 25px 50px rgba(0,0,0,0.3);
         }
-        @keyframes modalSlideIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .modal-header { padding: 24px 24px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 16px; }
-        .modal-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
-        .modal-icon.red { background: rgba(255,77,79,0.15); }
-        .modal-icon.yellow { background: rgba(250,173,20,0.15); }
-        .modal-icon.green { background: rgba(82,196,26,0.15); }
-        .modal-title-wrap { flex: 1; }
-        .modal-title { font-size: 18px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
-        .modal-subtitle { font-size: 13px; color: var(--text2); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+        .modal-header {
+            padding: 22px 22px 16px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: flex-start; gap: 14px;
+        }
+        .modal-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0;
+        }
+        .modal-icon.red { background: rgba(239,68,68,0.15); }
+        .modal-icon.yellow { background: rgba(245,158,11,0.15); }
+        .modal-icon.green { background: rgba(16,185,129,0.15); }
+        .modal-icon.blue { background: rgba(59,130,246,0.15); }
+        .modal-title-wrap { flex: 1; min-width: 0; }
+        .modal-title { font-size: 16px; font-weight: 700; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+        .modal-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .modal-meta-tag { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
+        .modal-date { font-size: 12px; color: var(--text3); }
         .modal-close {
-            width: 32px; height: 32px; border-radius: 8px; border: none;
-            background: var(--border); color: var(--text2); font-size: 18px;
-            cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+            width: 30px; height: 30px; border-radius: 8px; border: none;
+            background: var(--border); color: var(--text2); font-size: 16px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s; flex-shrink: 0;
         }
-        .modal-close:hover { background: var(--text3); color: var(--text); }
-        .modal-body { padding: 24px; overflow-y: auto; flex: 1; }
-        .detail-section { margin-bottom: 24px; }
-        .detail-section:last-child { margin-bottom: 0; }
-        .detail-label { font-size: 12px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
-        .detail-text { font-size: 14px; line-height: 1.7; color: var(--text2); }
-        .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-        .detail-item { background: var(--card); padding: 16px; border-radius: 8px; border: 1px solid var(--border); }
-        .detail-item-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
-        .detail-item-value { font-size: 14px; color: var(--text); font-weight: 500; }
-        @media (max-width: 768px) { .detail-grid { grid-template-columns: 1fr; } .modal-content { max-height: 95vh; margin: 12px; } }
+        .modal-close:hover { background: var(--text3); color: #fff; }
+        .modal-body { padding: 22px; overflow-y: auto; flex: 1; }
+        .modal-section { margin-bottom: 20px; }
+        .modal-section:last-child { margin-bottom: 0; }
+        .modal-label {
+            font-size: 11px; font-weight: 700; color: var(--text3);
+            letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px;
+        }
+        .modal-text { font-size: 14px; line-height: 1.75; color: var(--text2); }
+        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .modal-item { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
+        .modal-item-label { font-size: 11px; color: var(--text3); margin-bottom: 4px; }
+        .modal-item-value { font-size: 14px; font-weight: 600; color: var(--text); }
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .sections { grid-template-columns: 1fr; }
+            .section.full { grid-column: 1; }
+            .stats { flex-direction: column; }
+            .stat-item { border-right: none; border-bottom: 1px solid var(--border); }
+            .stat-item:last-child { border-bottom: none; }
+            .stat-item .num { font-size: 24px; }
+            .header { flex-direction: column; gap: 8px; }
+            .header-right { text-align: left; }
+            .modal-grid { grid-template-columns: 1fr; }
+            .modal-content { max-height: 92vh; margin: 8px; border-radius: 14px; }
+            .bar-label { width: 64px; }
+        }
+        @media (max-width: 480px) {
+            body { padding: 14px 12px 40px; }
+            .header-left h1 { font-size: 19px; }
+            .bar-label { display: none; }
+        }
     </style>
 </head>
 <body>
-    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题" aria-label="切换主题"></button>
+<div class="page-wrap">
+
+    <!-- Header -->
     <div class="header">
-        <h1>🏆 竞品与经代情报看板</h1>
-        <span class="update-time">数据更新时间：2026-03-25</span>
-    </div>
-    <div class="grid">
-        <div class="card">
-            <div class="card-title">📊 数据概览</div>
-            <div class="big-number" id="totalNews">--</div>
-            <div class="big-number-label">条实时情报</div>
+        <div class="header-left">
+            <div class="badge">🏆 竞品与经代情报</div>
+            <h1>竞品与经代情报看板</h1>
+            <div class="sub">竞品动态 · 渠道策略 · 政策监管</div>
         </div>
-        <div class="card">
-            <div class="card-title">📈 竞品动态分布</div>
+        <div class="header-right">
+            <div class="update-label">数据更新</div>
+            <div class="update-time">2026-03-25</div>
+        </div>
+        <button class="theme-toggle" onclick="toggleTheme()" aria-label="切换深浅主题"></button>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+        <div class="stat-item"><div class="num" id="totalNums">—</div><div class="label">条情报总数</div></div>
+        <div class="stat-item"><div class="num" id="highNums">—</div><div class="label">高优动态</div></div>
+        <div class="stat-item"><div class="num" id="channelNums">—</div><div class="label">渠道动态</div></div>
+    </div>
+
+    <!-- Sections -->
+    <div class="sections">
+
+        <!-- 竞品动态 -->
+        <div class="section s-green">
+            <div class="section-hd">
+                <div class="section-ico">📈</div>
+                <div>
+                    <div class="section-name">竞品动态</div>
+                    <div class="section-sub">产品 · 费率 · 合作</div>
+                </div>
+            </div>
             <div class="bar-chart" id="competitorBars"></div>
         </div>
-        <div class="card">
-            <div class="card-title">📱 经代渠道动态</div>
+
+        <!-- 经代渠道 -->
+        <div class="section s-blue">
+            <div class="section-hd">
+                <div class="section-ico">📱</div>
+                <div>
+                    <div class="section-name">经代渠道动态</div>
+                    <div class="section-sub">明亚 · 大童 · i云保</div>
+                </div>
+            </div>
             <div class="list" id="channelList"></div>
         </div>
-        <div class="card" style="grid-column: 1 / -1;">
-            <div class="card-title">📋 政策与监管动态</div>
-            <div class="list" id="policyList"></div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="detailModal" onclick="closeModal(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-icon" id="modalIcon">📋</div>
-                <div class="modal-title-wrap">
-                    <div class="modal-title" id="modalTitle">标题</div>
-                    <div class="modal-subtitle">
-                        <span id="modalTag">标签</span>
-                        <span id="modalDate">2026-03-25</span>
-                    </div>
+
+        <!-- 政策监管（占满整行） -->
+        <div class="section s-red full">
+            <div class="section-hd">
+                <div class="section-ico">📋</div>
+                <div>
+                    <div class="section-name">政策与监管动态</div>
+                    <div class="section-sub">金融监管 · 行业指导 · 消费者保护</div>
                 </div>
-                <button class="modal-close" onclick="closeModal()">✕</button>
             </div>
-            <div class="modal-body" id="modalBody"></div>
+            <div class="list" id="policyList" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
         </div>
+
     </div>
+</div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="detailModal" onclick="closeModal(event)">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-header">
+            <div class="modal-icon" id="modalIcon">📋</div>
+            <div class="modal-title-wrap">
+                <div class="modal-title" id="modalTitle">标题</div>
+                <div class="modal-meta" id="modalMeta"></div>
+            </div>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-body" id="modalBody"></div>
+    </div>
+</div>
+
 <script>
 const DATA = {
     competitor: [
@@ -302,7 +454,7 @@ const DATA = {
             importance: "medium",
             date: "2026-03-23",
             issuer: "银保监会",
-            summary: "明确商业医疗保险产品精算原则，限制，保证续保产品的长期保证续保条款的表述规范。",
+            summary: "明确商业医疗保险产品精算原则，限制保证续保产品的长期保证续保条款的表述规范。",
             scope: "医疗保险产品精算部门",
             impact: "如正式出台将对我司长期医疗险产品定价策略产生重大影响"
         },
@@ -319,158 +471,136 @@ const DATA = {
     ]
 };
 
-function toggleTheme() {
-    const current = document.documentElement.getAttribute('data-theme');
-    const newTheme = current === 'light' ? '' : 'light';
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-}
-
-function initTheme() {
-    const saved = localStorage.getItem('theme');
-    if (saved) { document.documentElement.setAttribute('data-theme', saved); return; }
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', prefersDark ? '' : 'light');
-}
-
-initTheme();
-
-// Count total news
+// Stats
 const total = DATA.competitor.length + DATA.channel.length + DATA.policy.length;
-document.getElementById('totalNews').textContent = total;
+const high = [...DATA.competitor, ...DATA.channel, ...DATA.policy].filter(i => i.importance === 'high').length;
+document.getElementById('totalNums').textContent = total;
+document.getElementById('highNums').textContent = high;
+document.getElementById('channelNums').textContent = DATA.channel.length;
 
-// Render competitor bars
+// Competitor bars
 const barContainer = document.getElementById('competitorBars');
-const maxCount = Math.max(...DATA.competitor.map(c => c.importance === 'high' ? 3 : c.importance === 'medium' ? 2 : 1));
 DATA.competitor.forEach((item, i) => {
-    const pct = (item.importance === 'high' ? 100 : item.importance === 'medium' ? 70 : 40);
+    const pct = item.importance === 'high' ? 100 : item.importance === 'medium' ? 65 : 35;
+    const label = item.importance === 'high' ? '高' : item.importance === 'medium' ? '中' : '低';
     barContainer.innerHTML += `
-        <div class="bar-item" onclick="showDetail('competitor', ${i})">
+        <div class="bar-item" onclick="showDetail('competitor',${i})" role="button" aria-label="查看${item.company}详情">
             <span class="bar-label">${item.company}</span>
             <div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div>
-            <span class="bar-value">${item.importance === 'high' ? '高' : item.importance === 'medium' ? '中' : '低'}</span>
+            <span class="bar-value">${label}</span>
         </div>`;
 });
 
-// Render channel list
+// Channel list
 const chContainer = document.getElementById('channelList');
-DATA.channel.slice(0, 4).forEach((item, i) => {
+DATA.channel.forEach((item, i) => {
     const color = item.importance === 'high' ? 'red' : 'yellow';
+    const tagCls = item.importance === 'high' ? 'tag-high' : 'tag-medium';
+    const tagTxt = item.importance === 'high' ? '🔥 高' : '中';
     chContainer.innerHTML += `
-        <div class="list-item" onclick="showDetail('channel', ${i})">
-            <div class="list-icon ${color}"></div>
-            <div class="list-content">
+        <div class="list-item" onclick="showDetail('channel',${i})" role="button">
+            <div class="list-dot ${color}"></div>
+            <div class="list-body">
                 <div class="list-title">${item.title}</div>
-                <div class="list-desc">${item.description}</div>
+                <div class="list-meta">
+                    <span class="list-tag ${tagCls}">${tagTxt}</span>
+                    <span class="list-date">${item.date}</span>
+                </div>
             </div>
         </div>`;
 });
 
-// Render policy list
+// Policy list — 2-col grid on desktop, responsive below
 const polContainer = document.getElementById('policyList');
 DATA.policy.forEach((item, i) => {
     const color = item.importance === 'high' ? 'red' : item.importance === 'medium' ? 'yellow' : 'green';
+    const tagCls = item.importance === 'high' ? 'tag-high' : item.importance === 'medium' ? 'tag-medium' : 'tag-normal';
     polContainer.innerHTML += `
-        <div class="list-item" onclick="showDetail('policy', ${i})">
-            <div class="list-icon ${color}"></div>
-            <div class="list-content">
+        <div class="list-item" onclick="showDetail('policy',${i})" role="button">
+            <div class="list-dot ${color}"></div>
+            <div class="list-body">
                 <div class="list-title">${item.title}</div>
-                <div class="list-desc">发布机构：${item.issuer} | ${item.date}</div>
+                <div class="list-meta">
+                    <span class="list-tag ${tagCls}">${item.type}</span>
+                    <span class="list-date">${item.date}</span>
+                </div>
             </div>
         </div>`;
 });
 
-function showDetail(type, index) {
-    const item = DATA[type][index];
-    const modal = document.getElementById('detailModal');
-    const icon = document.getElementById('modalIcon');
-    const color = item.importance === 'high' ? 'red' : item.importance === 'medium' ? 'yellow' : 'green';
+// Theme
+function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'light' ? '' : 'light';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('d2theme', next);
+}
+(function initTheme() {
+    const saved = localStorage.getItem('d2theme');
+    if (saved) { document.documentElement.setAttribute('data-theme', saved); return; }
+    const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (!dark) document.documentElement.setAttribute('data-theme', 'light');
+})();
 
-    icon.textContent = type === 'competitor' ? '📈' : type === 'channel' ? '📱' : '📋';
-    icon.className = 'modal-icon ' + color;
+// Modal
+function showDetail(type, idx) {
+    const item = DATA[type][idx];
+    const iconEl = document.getElementById('modalIcon');
+    const color = item.importance === 'high' ? 'red' : item.importance === 'medium' ? 'yellow' : 'green';
+    iconEl.className = 'modal-icon ' + color;
+    iconEl.textContent = type === 'competitor' ? '📈' : type === 'channel' ? '📱' : '📋';
     document.getElementById('modalTitle').textContent = item.title;
-    document.getElementById('modalTag').textContent = item.type || item.channel || '';
-    document.getElementById('modalDate').textContent = item.date;
+
+    let metaHTML = `<span class="modal-meta-tag tag-${item.importance === 'high' ? 'high' : item.importance === 'medium' ? 'medium' : 'normal'}" style="background:rgba(${item.importance==='high'?'239,68,68':item.importance==='medium'?'245,158,11':'59,130,246'},0.15);color:var(--${item.importance==='high'?'red':item.importance==='medium'?'yellow':'blue'})">${item.importance === 'high' ? '🔥 高' : item.importance === 'medium' ? '中' : '低'}</span>`;
+    if (type === 'competitor') metaHTML += `<span class="modal-date">${item.company}</span>`;
+    if (type === 'channel') metaHTML += `<span class="modal-date">${item.channel}</span>`;
+    if (type === 'policy') metaHTML += `<span class="modal-date">${item.issuer || ''}</span>`;
+    metaHTML += `<span class="modal-date">${item.date}</span>`;
+    document.getElementById('modalMeta').innerHTML = metaHTML;
 
     let bodyHTML = '';
     if (type === 'competitor') {
         bodyHTML = `
-            <div class="detail-section">
-                <div class="detail-label">动态详情</div>
-                <div class="detail-text">${item.description}</div>
+            <div class="modal-section"><div class="modal-label">动态详情</div><div class="modal-text">${item.description}</div></div>
+            <div class="modal-grid">
+                <div class="modal-item"><div class="modal-item-label">竞品公司</div><div class="modal-item-value">${item.company}</div></div>
+                <div class="modal-item"><div class="modal-item-label">涉及产品</div><div class="modal-item-value">${item.product}</div></div>
+                <div class="modal-item"><div class="modal-item-label">情报来源</div><div class="modal-item-value">${item.source}</div></div>
+                <div class="modal-item"><div class="modal-item-label">当前状态</div><div class="modal-item-value">${item.status}</div></div>
             </div>
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <div class="detail-item-label">竞品公司</div>
-                    <div class="detail-item-value">${item.company}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-item-label">涉及产品</div>
-                    <div class="detail-item-value">${item.product}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-item-label">情报来源</div>
-                    <div class="detail-item-value">${item.source}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-item-label">重要程度</div>
-                    <div class="detail-item-value">${item.importance === 'high' ? '🔥 高' : item.importance === 'medium' ? '中' : '低'}</div>
-                </div>
-            </div>
-            <div class="detail-section" style="margin-top:24px">
-                <div class="detail-label">影响分析</div>
-                <div class="detail-text">${item.impact}</div>
-            </div>`;
+            <div class="modal-section"><div class="modal-label">影响分析</div><div class="modal-text">${item.impact}</div></div>`;
     } else if (type === 'channel') {
         bodyHTML = `
-            <div class="detail-section">
-                <div class="detail-label">动态详情</div>
-                <div class="detail-text">${item.description}</div>
+            <div class="modal-section"><div class="modal-label">渠道简介</div><div class="modal-text">${item.description}</div></div>
+            <div class="modal-grid">
+                <div class="modal-item"><div class="modal-item-label">渠道名称</div><div class="modal-item-value">${item.channel}</div></div>
+                <div class="modal-item"><div class="modal-item-label">重要程度</div><div class="modal-item-value">${item.importance === 'high' ? '🔥 高' : '中'}</div></div>
             </div>
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <div class="detail-item-label">渠道名称</div>
-                    <div class="detail-item-value">${item.channel}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-item-label">重要程度</div>
-                    <div class="detail-item-value">${item.importance === 'high' ? '🔥 高' : '中'}</div>
-                </div>
-            </div>
-            <div class="detail-section" style="margin-top:24px">
-                <div class="detail-label">影响分析</div>
-                <div class="detail-text">${item.impact}</div>
-            </div>`;
+            <div class="modal-section"><div class="modal-label">影响分析</div><div class="modal-text">${item.impact || '暂无'}</div></div>`;
     } else if (type === 'policy') {
         bodyHTML = `
-            <div class="detail-section">
-                <div class="detail-label">政策摘要</div>
-                <div class="detail-text">${item.summary}</div>
+            <div class="modal-section"><div class="modal-label">政策摘要</div><div class="modal-text">${item.summary}</div></div>
+            <div class="modal-grid">
+                <div class="modal-item"><div class="modal-item-label">发布机构</div><div class="modal-item-value">${item.issuer}</div></div>
+                <div class="modal-item"><div class="modal-item-label">适用对象</div><div class="modal-item-value">${item.scope}</div></div>
             </div>
-            <div class="detail-grid">
-                <div class="detail-item">
-                    <div class="detail-item-label">发布机构</div>
-                    <div class="detail-item-value">${item.issuer}</div>
-                </div>
-                <div class="detail-item">
-                    <div class="detail-item-label">适用范围</div>
-                    <div class="detail-item-value">${item.scope}</div>
-                </div>
-            </div>
-            <div class="detail-section" style="margin-top:24px">
-                <div class="detail-label">影响分析</div>
-                <div class="detail-text">${item.impact}</div>
-            </div>`;
+            <div class="modal-section"><div class="modal-label">影响分析</div><div class="modal-text">${item.impact}</div></div>`;
     }
     document.getElementById('modalBody').innerHTML = bodyHTML;
-    modal.classList.add('active');
+    document.getElementById('detailModal').classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
 function closeModal(e) {
     if (e && e.target !== e.currentTarget) return;
     document.getElementById('detailModal').classList.remove('active');
+    document.body.style.overflow = '';
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+// Close on swipe down (mobile)
+let touchStartY = 0;
+document.getElementById('detailModal').addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; });
+document.getElementById('detailModal').addEventListener('touchend', e => { if (e.changedTouches[0].clientY - touchStartY > 80) closeModal(); });
 </script>
 </body>
 </html>
