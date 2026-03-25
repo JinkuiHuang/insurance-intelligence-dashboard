@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>竞 品 与 经 代 情 报 看 板  - 交 互 版 </title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        /* 默 认 深 色 模 式  */
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-card: rgba(255,255,255,0.02);
+            --bg-card-hover: rgba(255,255,255,0.04);
+            --border-color: rgba(255,255,255,0.06);
+            --border-hover: rgba(255,255,255,0.15);
+            --text-primary: #fff;
+            --text-secondary: rgba(255,255,255,0.5);
+            --text-tertiary: rgba(255,255,255,0.4);
+            --modal-bg: #141418;
+            --bar-gradient: linear-gradient(90deg, #00d084, #00ff88);
+        }
+        
+        /* 浅 色 模 式  - 通 过  data-theme 属 性 切 换  */
+        [data-theme="light"] {
+            --bg-primary: #f5f5f7;
+            --bg-card: rgba(255,255,255,0.8);
+            --bg-card-hover: rgba(255,255,255,0.95);
+            --border-color: rgba(0,0,0,0.08);
+            --border-hover: rgba(0,0,0,0.15);
+            --text-primary: #1d1d1f;
+            --text-secondary: rgba(0,0,0,0.6);
+            --text-tertiary: rgba(0,0,0,0.4);
+            --modal-bg: #ffffff;
+            --bar-gradient: linear-gradient(90deg, #00a854, #00d68f);
+        }
+        
+        body {
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            padding: 24px;
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+        
+        /* 主 题 切 换 按 钮  - 固 定 在 右 上 角  */
+        .theme-toggle {
+            position: fixed;
+            top: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .theme-toggle:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-hover);
+            transform: scale(1.05);
+        }
+        
+        [data-theme="light"] .theme-toggle::before {
+            content: "? ? ";
+        }
+        
+        :root:not([data-theme="light"]) .theme-toggle::before {
+            content: "☀ ️ ";
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .header h1 {
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .header .update-time {
+            color: var(--text-tertiary);
+            font-size: 12px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr 2fr;
+            grid-template-rows: auto auto;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.2s;
+        }
+        
+        .card:hover {
+            border-color: var(--border-hover);
+            background: var(--bg-card-hover);
+        }
+        
+        .card-title {
+            color: var(--text-secondary);
+            font-size: 12px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .big-number {
+            font-size: 72px;
+            font-weight: 300;
+            color: var(--text-primary);
+            line-height: 1;
+            margin-bottom: 8px;
+        }
+        
+        .big-number-label {
+            color: var(--text-tertiary);
+            font-size: 13px;
+        }
+        
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        
+        .bar-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .bar-item:hover {
+            background: var(--border-color);
+        }
+        
+        .bar-label {
+            width: 80px;
+            font-size: 11px;
+            color: var(--text-secondary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .bar-track {
+            flex: 1;
+            height: 16px;
+            background: var(--border-color);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        
+        .bar-fill {
+            height: 100%;
+            background: var(--bar-gradient);
+            border-radius: 2px;
+            transition: width 0.5s ease;
+        }
+        
+        .bar-value {
+            width: 40px;
+            text-align: right;
+            font-size: 11px;
+            color: var(--text-secondary);
+        }
+        
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .list-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: var(--bg-card);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid transparent;
+        }
+        
+        .list-item:hover {
+            background: var(--bg-card-hover);
+            border-color: var(--border-color);
+            transform: translateX(4px);
+        }
+        
+        .list-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+        
+        .list-icon.red { background: #ff4d4f; box-shadow: 0 0 8px rgba(255,77,79,0.4); }
+        .list-icon.yellow { background: #faad14; box-shadow: 0 0 8px rgba(250,173,20,0.4); }
+        .list-icon.green { background: #52c41a; box-shadow: 0 0 8px rgba(82,196,26,0.4); }
+        
+        .list-content { flex: 1; min-width: 0; }
+        
+        .list-title {
+            font-size: 13px;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .list-desc {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* 详 情 弹 窗  */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        
+        .modal-overlay.active { display: flex; }
+        
+        .modal-content {
+            background: var(--modal-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            max-width: 720px;
+            width: 100%;
+            max-height: 85vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            animation: modalSlideIn 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        
+        @keyframes modalSlideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .modal-header {
+            padding: 24px 24px 16px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        
+        .modal-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        
+        .modal-icon.red { background: rgba(255,77,79,0.15); }
+        .modal-icon.yellow { background: rgba(250,173,20,0.15); }
+        .modal-icon.green { background: rgba(82,196,26,0.15); }
+        
+        .modal-title-wrap { flex: 1; }
+        
+        .modal-title {
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+        
+        .modal-subtitle {
+            font-size: 13px;
+            color: var(--text-secondary);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .modal-close {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            border: none;
+            background: var(--border-color);
+            color: var(--text-secondary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        
+        .modal-close:hover {
+            background: var(--text-tertiary);
+            color: var(--text-primary);
+        }
+        
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        
+        .detail-section { margin-bottom: 24px; }
+        .detail-section:last-child { margin-bottom: 0; }
+        
+        .detail-label {
+            font-size: 12px;
+            color: var(--text-tertiary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        
+        .detail-text {
+            font-size: 14px;
+            line-height: 1.7;
+            color: var(--text-secondary);
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+        
+        .detail-item {
+            background: var(--bg-card);
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .detail-item-label {
+            font-size: 11px;
+            color: var(--text-tertiary);
+            margin-bottom: 4px;
+        }
+        
+        .detail-item-value {
+            font-size: 14px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .grid { grid-template-columns: 1fr; }
+            .big-number { font-size: 48px; }
+            .modal-content { max-height: 95vh; margin: 12px; }
+            .detail-grid { grid-template-columns: 1fr; }
+            .theme-toggle {
+                top: 12px;
+                right: 12px;
+                width: 40px;
+                height: 40px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 主 题 切 换 按 钮 ： 修 复 了 之 前 写 死 的  span 标 签 冲 突 ， 彻 底 交 给  CSS 控 制  -->
+    <button class="theme-toggle" onclick="toggleTheme()" title="切 换 主 题 " aria-label="切 换 主 题 "></button>
+
+    <div class="header">
+        <h1>? ?  竞 品 与 经 代 情 报 看 板 </h1>
+        <span class="update-time">数 据 更 新 时 间 ： 2026-03-25</span>
+    </div>
+    
+    <div class="grid">
+        <!-- 数 据 概 览  -->
+        <div class="card">
+            <div class="card-title">? ?  数 据 概 览 </div>
+            <div class="big-number">12</div>
+            <div class="big-number-label">本 月 新 增 情 报 </div>
+        </div>
+        
+        <!-- 竞 品 动 态 分 布  -->
+        <div class="card">
+            <div class="card-title">? ?  竞 品 动 态 分 布 </div>
+            <div class="bar-chart">
+                <div class="bar-item" onclick="showDetail('competitor', 0)">
+                    <span class="bar-label">众 安 保 险 </span>
+                    <div class="bar-track"><div class="bar-fill" style="width: 85%"></div></div>
+                    <span class="bar-value">6</span>
+                </div>
+                <div class="bar-item" onclick="showDetail('competitor', 1)">
+                    <span class="bar-label">泰 康 在 线 </span>
+                    <div class="bar-track"><div class="bar-fill" style="width: 70%"></div></div>
+                    <span class="bar-value">5</span>
+                </div>
+                <div class="bar-item" onclick="showDetail('competitor', 2)">
+                    <span class="bar-label">人 保 健 康 </span>
+                    <div class="bar-track"><div class="bar-fill" style="width: 55%"></div></div>
+                    <span class="bar-value">4</span>
+                </div>
+                <div class="bar-item" onclick="showDetail('competitor', 3)">
+                    <span class="bar-label">太 保 健 康 </span>
+                    <div class="bar-track"><div class="bar-fill" style="width: 40%"></div></div>
+                    <span class="bar-value">3</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 经 代 渠 道 情 报  -->
+        <div class="card">
+            <div class="card-title">? ?  经 代 渠 道 情 报 </div>
+            <div class="list">
+                <div class="list-item" onclick="showDetail('channel', 0)">
+                    <div class="list-icon red"></div>
+                    <div class="list-content">
+                        <div class="list-title">明 亚 保 险 经 纪 佣 金 政 策 调 整 </div>
+                        <div class="list-desc">长 期 医 疗 险 首 年 佣 金 比 例 上 浮 2-3个 百 分 点 </div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="showDetail('channel', 1)">
+                    <div class="list-icon yellow"></div>
+                    <div class="list-content">
+                        <div class="list-title">蚂 蚁 保 流 量 位 调 整 </div>
+                        <div class="list-desc">医 疗 险 类 目 展 示 优 先 级 提 升 ， 预 计 带 来 15-20%流 量 增 长 </div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="showDetail('channel', 2)">
+                    <div class="list-icon yellow"></div>
+                    <div class="list-content">
+                        <div class="list-title">大 童 保 险 服 务 考 核 调 整 </div>
+                        <div class="list-desc">医 疗 险 件 数 权 重 提 升 ， 推 动 团 队 加 强 健 康 险 销 售 </div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="showDetail('channel', 3)">
+                    <div class="list-icon red"></div>
+                    <div class="list-content">
+                        <div class="list-title">微 保 续 签 好 医 保 独 家 代 理 </div>
+                        <div class="list-desc">新 增 慢 病 版 产 品 上 线 计 划 ， 头 部 渠 道 资 源 集 中 度 提 升 </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 政 策 与 监 管 动 态  -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <div class="card-title">? ?  政 策 与 监 管 动 态 </div>
+            <div class="list" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <div class="list-item" onclick="showDetail('policy', 0)">
+                    <div class="list-icon red"></div>
+                    <div class="list-content">
+                        <div class="list-title">关 于 规 范 互 联 网 保 险 销 售 行 为 可 回 溯 管 理 的 通 知 </div>
+                        <div class="list-desc">金 融 监 管 总 局  'b7 要 求 全 流 程 可 回 溯 ， 记 录 保 存 不 少 于 10年 </div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="showDetail('policy', 1)">
+                    <div class="list-icon yellow"></div>
+                    <div class="list-content">
+                        <div class="list-title">商 业 健 康 险 产 品 责 任 设 计 指 引 （ 征 求 意 见 稿 ） </div>
+                        <div class="list-desc">行 业 协 会  'b7 规 范 责 任 设 计 ， 限 制 过 度 复 杂 的 产 品 结 构 </div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="showDetail('policy', 2)">
+                    <div class="list-icon yellow"></div>
+                    <div class="list-content">
+                        <div class="list-title">2026年 一 季 度 保 险 消 费 投 诉 情 况 通 报 </div>
+                        <div class="list-desc">金 融 监 管 总 局  'b7 医 疗 险 成 为 投 诉 重 灾 区 ， 需 限 期 整 改 </div>
+                    </div>
+                </div>
+                <div class="list-item" onclick="showDetail('policy', 3)">
+                    <div class="list-icon green"></div>
+                    <div class="list-content">
+                        <div class="list-title">关 于 深 化 车 险 综 合 改 革 有 关 措 施 的 通 知 </div>
+                        <div class="list-desc">银 保 监 会  'b7 提 及 同 步 规 范 短 期 健 康 险 费 率 管 理 </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 详 情 弹 窗  -->
+    <div class="modal-overlay" id="detailModal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div class="modal-icon" id="modalIcon">? ? </div>
+                <div class="modal-title-wrap">
+                    <div class="modal-title" id="modalTitle">标 题 </div>
+                    <div class="modal-subtitle" id="modalSubtitle">
+                        <span class="tag" id="modalTag">标 签 </span>
+                        <span id="modalDate">2026-03-25</span>
+                    </div>
+                </div>
+                <button class="modal-close" onclick="closeModal()">'d7</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 动 态 内 容  -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 主 题 切 换 功 能 
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        }
+        
+        // 页 面 加 载 时 恢 复 主 题 设 置 
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme) {
+                document.documentElement.setAttribute('data-theme', savedTheme);
+            } else {
+                // 如 果 没 有 保 存 设 置 ， 检 测 系 统 偏 好 
+                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+            }
+        }
+        
+        // 初 始 化 主 题 
+        initTheme();
+
+        // ✨  修 复 点 ： 监 听 系 统 层 的 主 题 变 化 驱 动 网 页 无 痛 切 换 
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+            // 只 有 当 用 户 没 有 通 过 按 钮 手 动 覆 盖 设 定 （ localStorage 里 没 有 该 值 ） 时 ， 才 采 取 跟 随 系 统 策 略 
+            if (!localStorage.getItem('theme')) {
+                document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+            }
+        });
+
+        // 基 础 数 据 
+        const data = {
+            competitor: [
+                {
+                    title: "尊 享 e生 2026版 产 品 升 级 ",
+                    company: "众 安 保 险 ",
+                    type: "产 品 升 级 ",
+                    importance: "high",
+                    date: "2026-03-23",
+                    product: "尊 享 e生 2026版 ",
+                    description: "升 级 特 定 药 品 目 录 ， 新 增 CAR-T疗 法 覆 盖 ， 扩 展 特 药 数 量 至 300+",
+                    source: "官 网 /行 业 媒 体 ",
+                    status: "待 跟 进 ",
+                    impact: "高  - CAR-T疗 法 覆 盖 扩 展 将 提 升 产 品 在 高 端 医 疗 市 场 的 竞 争 力 "
+                },
+                {
+                    title: "泰 康 百 万 医 疗 险 渠 道 拓 展 ",
+                    company: "泰 康 在 线 ",
+                    type: "渠 道 拓 展 ",
+                    importance: "medium",
+                    date: "2026-03-23",
+                    product: "泰 康 百 万 医 疗 险 ",
+                    description: "与 抖 音 健 康 达 成 战 略 合 作 ， 启 动 短 视 频 渠 道 流 量 获 客 测 试 ",
+                    source: "渠 道 反 馈 ",
+                    status: "待 跟 进 ",
+                    impact: "中  - 短 视 频 渠 道 获 客 可 能 成 为 新 的 流 量 增 长 点 "
+                },
+                {
+                    title: "好 医 保 系 列 费 率 调 整 ",
+                    company: "人 保 健 康 ",
+                    type: "价 格 调 整 ",
+                    importance: "high",
+                    date: "2026-03-23",
+                    product: "好 医 保 系 列 ",
+                    description: "针 对 26-35岁 年 龄 段 费 率 下 调 约 8%， 加 强 年 轻 客 群 竞 争 力 ",
+                    source: "产 品 对 比 分 析 ",
+                    status: "跟 进 中 ",
+                    impact: "高  - 费 率 下 调 将 直 接 提 升 价 格 竞 争 力 ， 需 评 估 对 我 司 产 品 的 冲 击 "
+                },
+                {
+                    title: "蓝 医 保 2026慢 病 版 上 线 ",
+                    company: "太 保 健 康 ",
+                    type: "新 产 品 上 线 ",
+                    importance: "high",
+                    date: "2026-03-23",
+                    product: "蓝 医 保 2026",
+                    description: "推 出 针 对 慢 病 人 群 专 项 版 本 ， 高 血 压 /糖 尿 病 可 标 体 承 保 ",
+                    source: "发 布 会 /新 闻 稿 ",
+                    status: "待 跟 进 ",
+                    impact: "高  - 慢 病 人 群 专 项 产 品 填 补 市 场 空 白 ， 可 能 引 发 同 类 产 品 跟 进 "
+                }
+            ],
+            channel: [
+                {
+                    title: "明 亚 保 险 经 纪 佣 金 政 策 调 整 ",
+                    channel: "明 亚 保 险 经 纪 ",
+                    type: "保 险 经 代 ",
+                    importance: "high",
+                    date: "2026-03-23",
+                    description: "经 代 渠 道 长 期 医 疗 险 首 年 佣 金 比 例 上 浮 2-3个 百 分 点 ， 续 期 佣 金 维 持 不 变 ",
+                    source: "渠 道 内 部 通 知 ",
+                    impact: "高  - 需 评 估 对 我 司 经 代 渠 道 的 影 响 ",
+                    status: "待 跟 进 "
+                },
+                {
+                    title: "蚂 蚁 保 流 量 位 调 整 ",
+                    channel: "蚂 蚁 保 ",
+                    type: "互 联 网 渠 道 ",
+                    importance: "medium",
+                    date: "2026-03-23",
+                    description: "平 台 首 页 流 量 位 调 整 ， 医 疗 险 类 目 展 示 优 先 级 提 升 ， 预 计 带 来 15-20%流 量 增 长 ",
+                    source: "平 台 运 营 数 据 ",
+                    impact: "中  - 可 关 注 我 司 产 品 是 否 有 机 会 入 驻 ",
+                    status: "待 跟 进 "
+                },
+                {
+                    title: "大 童 保 险 服 务 考 核 调 整 ",
+                    channel: "大 童 保 险 服 务 ",
+                    type: "保 险 经 代 ",
+                    importance: "medium",
+                    date: "2026-03-23",
+                    description: "经 纪 人 季 度 考 核 标 准 调 整 ， 医 疗 险 件 数 权 重 提 升 ， 推 动 团 队 加 强 健 康 险 销 售 ",
+                    source: "渠 道 培 训 资 料 ",
+                    impact: "中  - 经 代 渠 道 竞 争 加 剧 ",
+                    status: "待 跟 进 "
+                },
+                {
+                    title: "微 保 续 签 好 医 保 独 家 代 理 ",
+                    channel: "微 保 ",
+                    type: "互 联 网 渠 道 ",
+                    importance: "high",
+                    date: "2026-03-23",
+                    description: "续 签 好 医 保 系 列 产 品 独 家 代 理 协 议 ， 新 增 慢 病 版 产 品 上 线 计 划 ， 头 部 渠 道 资 源 集 中 度 提 升 ",
+                    source: "官 方 公 告 ",
+                    impact: "高  - 头 部 渠 道 资 源 集 中 度 提 升 ",
+                    status: "待 跟 进 "
+                }
+            ],
+            policy: [
+                {
+                    title: "关 于 规 范 互 联 网 保 险 销 售 行 为 可 回 溯 管 理 的 通 知 ",
+                    type: "监 管 政 策 发 布 ",
+                    importance: "high",
+                    date: "2026-03-23",
+                    issuer: "金 融 监 管 总 局 ",
+                    summary: "要 求 互 联 网 保 险 销 售 全 流 程 可 回 溯 ， 包 括 浏 览 轨 迹 、 投 保 过 程 、 确 认 环 节 等 需 完 整 记 录 保 存 不 少 于 10年 ",
+                    scope: "所 有 互 联 网 保 险 销 售 渠 道 、 经 代 平 台 、 保 险 公 司 自 营 平 台 ",
+                    impact: "需 评 估 我 司 经 代 渠 道 合 规 改 造 成 本 及 时 间 表 ",
+                    status: "待 跟 进 "
+                },
+                {
+                    title: "商 业 健 康 险 产 品 责 任 设 计 指 引 （ 征 求 意 见 稿 ） ",
+                    type: "行 业 指 导 意 见 ",
+                    importance: "medium",
+                    date: "2026-03-23",
+                    issuer: "行 业 协 会 ",
+                    summary: "规 范 健 康 险 产 品 责 任 设 计 ， 明 确 基 本 责 任 与 可 选 责 任 划 分 ， 限 制 过 度 复 杂 的 产 品 结 构 ， 鼓 励 开 发 长 期 保 障 型 产 品 ",
+                    scope: "健 康 险 产 品 设 计 部 门 、 精 算 部 门 、 合 规 部 门 ",
+                    impact: "如 正 式 出 台 ， 我 司 产 品 库 中 部 分 产 品 可 能 需 调 整 责 任 结 构 ",
+                    status: "待 跟 进 "
+                },
+                {
+                    title: "2026年 一 季 度 保 险 消 费 投 诉 情 况 通 报 ",
+                    type: "处 罚 通 报 ",
+                    importance: "medium",
+                    date: "2026-03-23",
+                    issuer: "金 融 监 管 总 局 ",
+                    summary: "医 疗 险 成 为 投 诉 重 灾 区 ， 主 要 问 题 包 括 理 赔 纠 纷 、 销 售 误 导 、 健 康 告 知 争 议 ， 监 管 部 门 要 求 保 险 公 司 限 期 整 改 ",
+                    scope: "医 疗 险 承 保 公 司 、 理 赔 部 门 、 客 服 部 门 ",
+                    impact: "需 关 注 我 司 医 疗 险 投 诉 率 是 否 超 标 ， 及 时 优 化 理 赔 流 程 ",
+                    status: "待 跟 进 "
+                },
+                {
+                    title: "关 于 深 化 车 险 综 合 改 革 有 关 措 施 的 通 知 ",
+                    type: "监 管 政 策 发 布 ",
+                    importance: "low",
+                    date: "2026-03-23",
+                    issuer: "银 保 监 会 ",
+                    summary: "虽 针 对 车 险 ， 但 文 件 提 及 将 同 步 规 范 短 期 健 康 险 费 率 管 理 ， 可 能 影 响 我 司 短 期 医 疗 险 定 价 策 略 ",
+                    scope: "短 期 健 康 险 产 品 、 精 算 定 价 部 门 ",
+                    impact: "持 续 关 注 后 续 配 套 文 件 ",
+                    status: "待 跟 进 "
+                }
+            ]
+        };
+
+        // 打 开 详 情 弹 窗 
+        function showDetail(type, index) {
+            const item = data[type][index];
+            const modal = document.getElementById('detailModal');
+            const icon = document.getElementById('modalIcon');
+            const title = document.getElementById('modalTitle');
+            const subtitle = document.getElementById('modalSubtitle');
+            const tag = document.getElementById('modalTag');
+            const date = document.getElementById('modalDate');
+            const body = document.getElementById('modalBody');
+
+            // 设 置 图 标 和 颜 色 
+            let iconText = '? ? ';
+            let colorClass = 'red';
+            if (type === 'competitor') { iconText = '? ? '; }
+            else if (type === 'channel') { iconText = '? ? '; }
+            else if (type === 'policy') { iconText = '? ? '; }
+            
+            if (item.importance === 'medium') colorClass = 'yellow';
+            else if (item.importance === 'low') colorClass = 'green';
+            icon.textContent = iconText;
+            icon.className = 'modal-icon ' + colorClass;
+            title.textContent = item.title;
+            tag.textContent = item.type;
+            date.textContent = item.date;
+            
+            // 生 成 详 情 内 容 
+            let content = '';
+            if (type === 'competitor') {
+                content = `
+                    <div class="detail-section">
+                        <div class="detail-label">动 态 描 述 </div>
+                        <div class="detail-text">${item.description}</div>
+                    </div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-item-label">竞 品 公 司 </div>
+                            <div class="detail-item-value">${item.company}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-item-label">涉 及 产 品 </div>
+                            <div class="detail-item-value">${item.product}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-item-label">情 报 来 源 </div>
+                            <div class="detail-item-value">${item.source}</div>
+                        </div>
+                    </div>
+                    <div class="detail-section" style="margin-top: 24px;">
+                        <div class="detail-label">影 响 评 估 </div>
+                        <div class="detail-text">${item.impact}</div>
+                    </div>
+                `;
+            } else if (type === 'channel') {
+                content = `
+                    <div class="detail-section">
+                        <div class="detail-label">情 报 内 容 </div>
+                        <div class="detail-text">${item.description}</div>
+                    </div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-item-label">渠 道 名 称 </div>
+                            <div class="detail-item-value">${item.channel}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-item-label">合 作 公 司 </div>
+                            <div class="detail-item-value">${item.partner || '无 '}</div>
+                        </div>
+                    </div>
+                    <div class="detail-section" style="margin-top: 24px;">
+                        <div class="detail-label">影 响 评 估 </div>
+                        <div class="detail-text">${item.impact}</div>
+                    </div>
+                `;
+            } else if (type === 'policy') {
+                content = `
+                    <div class="detail-section">
+                        <div class="detail-label">内 容 摘 要 </div>
+                        <div class="detail-text">${item.summary}</div>
+                    </div>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <div class="detail-item-label">发 布 机 构 </div>
+                            <div class="detail-item-value">${item.issuer}</div>
+                        </div>
+                    </div>
+                    <div class="detail-section" style="margin-top: 24px;">
+                        <div class="detail-label">影 响 评 估 </div>
+                        <div class="detail-text">${item.impact}</div>
+                    </div>
+                `;
+            }
+            
+            body.innerHTML = content;
+            modal.classList.add('active');
+        }
+        
+        // 关 闭 弹 窗 
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
